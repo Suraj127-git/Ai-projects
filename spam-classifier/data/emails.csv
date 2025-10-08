@@ -1,0 +1,5 @@
+text,label
+"Congratulations! You've won a $1,000 Walmart gift card. Go to http://bit.ly/123456 to claim now!",spam
+"Hey John, can we reschedule the meeting to tomorrow?",ham
+"URGENT! Your account will be suspended unless you verify now.",spam
+"Hi Mom, just landed safely.",ham
