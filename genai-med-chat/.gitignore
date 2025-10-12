@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.env
+.env
+*.venv
+venv/
+ENV/
+env/
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Test coverage
+htmlcov/
+.coverage
+.coverage.*
+
+# PyInstaller
+*.spec
+
+# mypy
+.mypy_cache/
+
+# pipenv
+Pipfile.lock
+
+# virtualenv
+.venv/
+
+# dotenv
+.env.*
+
+# FastAPI/Flask
+instance/
+.webassets-cache
+
+# Other
+*.sqlite3
+*.db
