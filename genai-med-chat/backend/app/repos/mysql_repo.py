@@ -50,3 +50,36 @@ class MySQLRepo:
         with engine.begin() as conn:
             res = conn.execute(messages.insert().values(conv_id=conv_id, sender=sender, content=content, metadata=metadata))
             return res.inserted_primary_key[0]
+        
+    def create_conversation(self, user_id: int, title: str = None):
+        with engine.begin() as conn:
+            res = conn.execute(conversations.insert().values(user_id=user_id, title=title))
+            return res.inserted_primary_key[0]
+
+    def create_graph_node(self, conv_id: int, node_type: str, content: str, metadata: dict = None):
+        from sqlalchemy import Table, Column, Integer, BigInteger, String, Text, JSON, TIMESTAMP, MetaData
+        # Using raw SQL execution here (tables were created via schemas.sql)
+        with engine.begin() as conn:
+            res = conn.execute(
+                "INSERT INTO graph_nodes (conv_id, node_type, content, metadata) VALUES (%s, %s, %s, %s)",
+                (conv_id, node_type, content, metadata or {})
+            )
+            return conn.execute("SELECT LAST_INSERT_ID()").scalar()
+
+    def create_graph_edge(self, conv_id: int, from_node: int, to_node: int, relation: str, metadata: dict = None):
+        with engine.begin() as conn:
+            res = conn.execute(
+                "INSERT INTO graph_edges (conv_id, from_node, to_node, relation, metadata) VALUES (%s, %s, %s, %s, %s)",
+                (conv_id, from_node, to_node, relation, metadata or {})
+            )
+            return conn.execute("SELECT LAST_INSERT_ID()").scalar()
+
+    def get_graph(self, conv_id: int):
+        with engine.begin() as conn:
+            nodes = conn.execute("SELECT id, node_type, content, metadata, created_at FROM graph_nodes WHERE conv_id = %s", (conv_id,)).fetchall()
+            edges = conn.execute("SELECT id, from_node, to_node, relation, metadata, created_at FROM graph_edges WHERE conv_id = %s", (conv_id,)).fetchall()
+            # convert to list of dicts
+            nodes_list = [dict(row._mapping) for row in nodes]
+            edges_list = [dict(row._mapping) for row in edges]
+            return {"nodes": nodes_list, "edges": edges_list}
+

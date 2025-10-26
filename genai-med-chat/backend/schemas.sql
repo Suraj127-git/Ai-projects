@@ -35,3 +35,23 @@ CREATE TABLE IF NOT EXISTS docs (
   metadata JSON,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Graph tables for reasoning/provenance
+CREATE TABLE IF NOT EXISTS graph_nodes (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  conv_id BIGINT,
+  node_type VARCHAR(100),      -- e.g., 'user', 'retrieval', 'generation'
+  content TEXT,
+  metadata JSON,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS graph_edges (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  conv_id BIGINT,
+  from_node BIGINT,
+  to_node BIGINT,
+  relation VARCHAR(100),
+  metadata JSON,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

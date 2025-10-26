@@ -1,0 +1,72 @@
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: genai_med
+      MYSQL_USER: genai
+      MYSQL_PASSWORD: genai
+    ports:
+      - "3306:3306"
+    volumes:
+      - ../data/mysql:/var/lib/mysql
+
+  qdrant:
+    image: qdrant/qdrant:v1.2.0
+    ports:
+      - "6333:6333"
+    volumes:
+      - ../data/qdrant:/qdrant/storage
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ../backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ../backend:/app
+      - ../data/uploads:/app/data/uploads
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mysql
+      - qdrant
+      - redis
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USER=genai
+      - MYSQL_PASSWORD=genai
+      - MYSQL_DB=genai_med
+      - QDRANT_URL=http://qdrant:6333
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+  celery:
+    build: ../backend
+    command: celery -A worker.celery_app worker --loglevel=info
+    volumes:
+      - ../backend:/app
+    depends_on:
+      - redis
+      - mysql
+      - qdrant
+    environment:
+      - REDIS_HOST=redis
+      - MYSQL_HOST=mysql
+      - QDRANT_URL=http://qdrant:6333
+
+  frontend:
+    working_dir: /app
+    build: ../frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend:/app
+    command: npm run dev
+    depends_on:
+      - backend
