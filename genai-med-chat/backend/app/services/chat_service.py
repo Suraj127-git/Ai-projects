@@ -33,15 +33,14 @@ class ChatService:
                 self.vs = Qdrant(url=settings.QDRANT_URL, prefer_grpc=False, collection_name=settings.QDRANT_COLLECTION)
                 retriever = self.vs.as_retriever(search_type="mmr", search_kwargs={"k": 3})
                 self.rqa = RetrievalQA.from_chain_type(llm=self.model.llm, chain_type="stuff", retriever=retriever)
-            except Exception as e:
-                # fallback
+            except Exception:
                 self.vs = None
                 self.rqa = None
         else:
             self.vs = None
             self.rqa = None
 
-        async def handle_query(self, user_id: int, text: str, modalities: Dict = None) -> Dict[str, Any]:
+    async def handle_query(self, user_id: int, text: str, modalities: Dict = None) -> Dict[str, Any]:
         """
         Extended flow:
           - Ensure a conversation exists (create one)
@@ -74,10 +73,8 @@ class ChatService:
         if getattr(self, "rqa", None):
             try:
                 loop = asyncio.get_event_loop()
-                # For more control one might call retriever separately; here we get the chain output
                 rqa_output = await loop.run_in_executor(None, lambda: self.rqa.run(text))
-                # rqa_output might be a string answer; retrieving individual hits requires deeper integration.
-                # For demo: we call retriever directly if possible to fetch top documents (if vs exists)
+                # For demo: get top documents if retriever exists
                 try:
                     retriever = self.vs.as_retriever(search_type="mmr", search_kwargs={"k": 3})
                     docs = retriever.get_relevant_documents(text)
@@ -97,7 +94,7 @@ class ChatService:
         try:
             loop = asyncio.get_event_loop()
             answer = await loop.run_in_executor(None, lambda: self.model.generate(text))
-        except Exception as e:
+        except Exception:
             answer = "Sorry — model generation failed."
 
         # Record generation node
@@ -108,10 +105,8 @@ class ChatService:
         # 4) Create edges: user -> retrieval(s), retrieval(s) -> generation, user -> generation
         try:
             if conv_id is not None and user_node_id:
-                # user -> generation
                 if gen_node_id:
                     lg.record_edge(conv_id=conv_id, from_node=user_node_id, to_node=gen_node_id, relation="asked_for")
-                # user -> retrieval
                 for r_nid in retrieval_node_ids:
                     lg.record_edge(conv_id=conv_id, from_node=user_node_id, to_node=r_nid, relation="retrieved")
                     if gen_node_id:

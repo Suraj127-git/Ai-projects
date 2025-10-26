@@ -1,12 +1,12 @@
 # backend/app/core/config.py
 import os
-from pathlib import Path
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "genai-med-chat"
+    
     # MySQL (change credentials for local)
-    MYSQL_HOST: str = os.getenv("MYSQL_HOST", "127.0.0.1")
+    MYSQL_HOST: str = os.getenv("MYSQL_HOST", "mysql")
     MYSQL_PORT: int = int(os.getenv("MYSQL_PORT", 3306))
     MYSQL_USER: str = os.getenv("MYSQL_USER", "genai")
     MYSQL_PASSWORD: str = os.getenv("MYSQL_PASSWORD", "genai")
