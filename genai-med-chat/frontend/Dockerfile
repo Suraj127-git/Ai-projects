@@ -1,12 +1,24 @@
-# frontend/Dockerfile
+# Use official Node.js image
 FROM node:20-alpine
 
+# Set working directory
 WORKDIR /app
 
+# Copy only the vite-react folder content into /app
 COPY vite-react/package*.json ./
+
+# Install dependencies
 RUN npm install
 
-COPY vite-react/ .
+# Copy the rest of the app
+COPY vite-react ./
 
-EXPOSE 3000
-CMD ["npm", "run", "dev"]
+# Build the app
+RUN npm run build
+
+# Expose port for the dev server
+EXPOSE 5173
+
+# Start dev server
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
