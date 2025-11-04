@@ -1,6 +1,23 @@
 {
+  "name": "genai-med-chat-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GenAI Medical Chat Frontend - Lerna Monorepo",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "bootstrap": "lerna bootstrap",
+    "build": "lerna run build",
+    "dev": "lerna run dev --parallel",
+    "test": "lerna run test",
+    "clean": "lerna clean",
+    "publish": "lerna publish"
+  },
   "devDependencies": {
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.0"
+    "lerna": "^7.4.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
