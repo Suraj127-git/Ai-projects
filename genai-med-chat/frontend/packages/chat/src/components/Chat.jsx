@@ -1,5 +1,6 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
+import gsap from "gsap";
 
 export default function Chat() {
   const [messages, setMessages] = useState([]);
@@ -11,6 +12,16 @@ export default function Chat() {
   const [lastConvId, setLastConvId] = useState(null);
   const [graphJson, setGraphJson] = useState(null);
   const [showGraph, setShowGraph] = useState(false);
+  const chatEndRef = useRef(null);
+
+  // 🩺 Scroll to bottom on new message
+  useEffect(() => {
+    gsap.to(chatEndRef.current, {
+      scrollTo: { y: chatEndRef.current.scrollHeight },
+      duration: 0.6,
+      ease: "power2.out",
+    });
+  }, [messages]);
 
   // 🧠 Handle send text message
   const handleSend = async (text = input) => {
@@ -24,7 +35,7 @@ export default function Chat() {
       const response = await axios.post("/api/v1/chat/query", {
         user_id: 1,
         text,
-        conv_id: lastConvId, // continue conversation if available
+        conv_id: lastConvId,
       });
       const botMessage = {
         sender: "bot",
@@ -36,7 +47,7 @@ export default function Chat() {
       console.error(error);
       setMessages((prev) => [
         ...prev,
-        { sender: "bot", text: "Error: unable to fetch response" },
+        { sender: "bot", text: "❌ Unable to fetch response" },
       ]);
     } finally {
       setLoading(false);
@@ -50,7 +61,6 @@ export default function Chat() {
       setRecording(false);
       return;
     }
-
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
@@ -76,7 +86,7 @@ export default function Chat() {
           console.error(err);
           setMessages((prev) => [
             ...prev,
-            { sender: "bot", text: "Voice processing failed." },
+            { sender: "bot", text: "🎙 Voice processing failed." },
           ]);
         }
       };
@@ -106,12 +116,9 @@ export default function Chat() {
     }
   };
 
-  // 🧩 Fetch LangGraph reasoning graph
+  // 🧩 Fetch reasoning graph
   const handleShowGraph = async () => {
-    if (!lastConvId) {
-      alert("No conversation id available. Send a message first.");
-      return;
-    }
+    if (!lastConvId) return alert("No conversation yet!");
     try {
       const res = await axios.get(`/api/v1/graph/${lastConvId}`);
       setGraphJson(res.data);
@@ -123,156 +130,114 @@ export default function Chat() {
   };
 
   return (
-    <div className="chat-container" style={{ maxWidth: 700, margin: "0 auto", padding: 20 }}>
-      <h2 style={{ textAlign: "center", marginBottom: 10 }}>🧬 GenAI Medical Chatbot</h2>
+    <div className="max-w-2xl mx-auto p-4 md:p-6 bg-gradient-to-br from-blue-50 via-white to-blue-100 rounded-3xl shadow-inner relative">
+      {/* Header */}
+      <header className="flex justify-center items-center mb-4">
+        <h2 className="text-2xl font-bold text-blue-700 flex items-center gap-2">
+          🧬 GenAI Medical Assistant
+        </h2>
+      </header>
 
+      {/* Chat messages */}
       <div
-        className="chat-box"
-        style={{
-          border: "1px solid #ccc",
-          borderRadius: 8,
-          padding: 10,
-          height: 400,
-          overflowY: "auto",
-          background: "#f9f9f9",
-        }}
+        ref={chatEndRef}
+        className="bg-white/70 backdrop-blur-md rounded-2xl shadow-inner border border-blue-100 p-4 h-[420px] overflow-y-auto space-y-3 transition-all"
       >
         {messages.map((msg, i) => (
           <div
             key={i}
-            style={{
-              margin: "8px 0",
-              textAlign: msg.sender === "user" ? "right" : "left",
-            }}
+            className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} animate-fadeIn`}
           >
-            <span
-              style={{
-                display: "inline-block",
-                padding: "8px 12px",
-                borderRadius: 12,
-                background: msg.sender === "user" ? "#d1e7ff" : "#e2e2e2",
-              }}
+            <div
+              className={`px-4 py-2.5 rounded-2xl shadow-sm max-w-[80%] text-sm ${
+                msg.sender === "user"
+                  ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-br-none"
+                  : "bg-gray-100 text-gray-800 rounded-bl-none"
+              }`}
             >
               {msg.text}
-            </span>
+            </div>
           </div>
         ))}
-        {loading && <div className="chat-message bot">Thinking...</div>}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-100 text-gray-600 px-4 py-2.5 rounded-2xl rounded-bl-none animate-pulse">
+              Thinking...
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Input bar */}
-      <div
-        className="input-area"
-        style={{ display: "flex", gap: 8, marginTop: 10 }}
-      >
+      {/* Input section */}
+      <div className="mt-4 flex items-center gap-2">
         <input
           type="text"
           value={input}
           placeholder="Ask a medical question..."
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          style={{
-            flex: 1,
-            padding: "8px 10px",
-            borderRadius: 8,
-            border: "1px solid #ccc",
-          }}
+          className="flex-1 bg-white/80 border border-gray-300 rounded-xl px-4 py-2.5 shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none transition-all"
         />
         <button
           onClick={() => handleSend()}
-          style={{
-            background: "#007bff",
-            color: "#fff",
-            border: "none",
-            borderRadius: 8,
-            padding: "8px 14px",
-          }}
+          className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all"
         >
-          Send
+          ➤
         </button>
       </div>
 
-      {/* Controls */}
-      <div
-        className="voice-ocr-controls"
-        style={{ marginTop: 10, display: "flex", gap: 10 }}
-      >
+      {/* Control bar */}
+      <div className="flex justify-between mt-4 text-sm">
         <button
           onClick={handleVoice}
-          style={{
-            background: recording ? "#dc3545" : "#198754",
-            color: "#fff",
-            border: "none",
-            borderRadius: 8,
-            padding: "8px 14px",
-          }}
+          className={`px-4 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-2 ${
+            recording
+              ? "bg-red-500 text-white animate-pulse"
+              : "bg-green-500 text-white hover:bg-green-600"
+          }`}
         >
           {recording ? "⏹ Stop" : "🎙 Voice"}
         </button>
 
+        <label
+          htmlFor="ocrInput"
+          className="cursor-pointer bg-yellow-400 text-white px-4 py-2.5 rounded-xl hover:bg-yellow-500 shadow-sm transition-all"
+        >
+          📄 Upload
+        </label>
         <input
           type="file"
           accept="image/*"
           id="ocrInput"
-          style={{ display: "none" }}
+          className="hidden"
           onChange={handleFileUpload}
         />
-        <label
-          htmlFor="ocrInput"
-          className="ocr-label"
-          style={{
-            background: "#ffc107",
-            padding: "8px 14px",
-            borderRadius: 8,
-            cursor: "pointer",
-          }}
-        >
-          📄 Upload
-        </label>
 
         <button
           onClick={handleShowGraph}
-          style={{
-            background: "#6f42c1",
-            color: "#fff",
-            border: "none",
-            borderRadius: 8,
-            padding: "8px 14px",
-          }}
+          className="bg-purple-500 text-white px-4 py-2.5 rounded-xl hover:bg-purple-600 shadow-sm transition-all"
         >
-          🧠 Show Reasoning Graph
+          🧠 Graph
         </button>
       </div>
 
       {/* Graph Modal */}
       {showGraph && (
-        <div
-          className="graph-modal"
-          style={{
-            position: "fixed",
-            right: 20,
-            top: 70,
-            width: 480,
-            height: 400,
-            overflow: "auto",
-            background: "#fff",
-            padding: 12,
-            borderRadius: 8,
-            boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
-            zIndex: 10,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: 6,
-            }}
-          >
-            <strong>Reasoning Graph (conv: {lastConvId})</strong>
-            <button onClick={() => setShowGraph(false)}>Close</button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-white/90 rounded-2xl p-6 shadow-2xl w-[90%] max-w-lg overflow-auto max-h-[80vh] relative">
+            <button
+              onClick={() => setShowGraph(false)}
+              className="absolute top-2 right-3 text-gray-500 hover:text-gray-700"
+            >
+              ✖
+            </button>
+            <h3 className="text-lg font-bold text-blue-700 mb-2">
+              🧠 Reasoning Graph (Conv: {lastConvId})
+            </h3>
+            <pre className="text-xs bg-gray-50 border border-gray-200 rounded-lg p-3 overflow-auto">
+              {JSON.stringify(graphJson, null, 2)}
+            </pre>
           </div>
-          <pre style={{ fontSize: 12 }}>{JSON.stringify(graphJson, null, 2)}</pre>
         </div>
       )}
     </div>

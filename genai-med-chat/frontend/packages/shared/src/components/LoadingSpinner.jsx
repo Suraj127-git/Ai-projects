@@ -1,15 +1,18 @@
-import React from 'react';
+import React from "react";
 
-const LoadingSpinner = ({ size = 'medium', className = '' }) => {
+const LoadingSpinner = ({ size = "medium", className = "" }) => {
   const sizeClasses = {
-    small: 'w-4 h-4',
-    medium: 'w-8 h-8',
-    large: 'w-12 h-12'
+    small: "w-5 h-5 border-2",
+    medium: "w-8 h-8 border-3",
+    large: "w-12 h-12 border-4",
   };
 
   return (
     <div className={`flex justify-center items-center ${className}`}>
-      <div className={`${sizeClasses[size]} animate-spin rounded-full border-b-2 border-blue-600`}></div>
+      <div
+        className={`${sizeClasses[size]} border-t-transparent border-blue-500 rounded-full animate-spin border-solid`}
+        style={{ animationDuration: "0.8s" }}
+      ></div>
     </div>
   );
 };

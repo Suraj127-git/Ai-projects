@@ -1,12 +1,20 @@
-import React from 'react';
+import React from "react";
 
-const Card = ({ children, className = '', title, subtitle }) => {
+const Card = ({ children, className = "", title, subtitle }) => {
   return (
-    <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
+    <div
+      className={`bg-white/70 backdrop-blur-lg border border-gray-200 rounded-2xl shadow-xl p-6 hover:shadow-2xl transition-shadow duration-300 ${className}`}
+    >
       {(title || subtitle) && (
-        <div className="mb-4">
-          {title && <h2 className="text-xl font-bold text-gray-800">{title}</h2>}
-          {subtitle && <p className="text-gray-600 mt-1">{subtitle}</p>}
+        <div className="mb-5 text-center">
+          {title && (
+            <h2 className="text-2xl font-bold text-blue-700 tracking-tight">
+              {title}
+            </h2>
+          )}
+          {subtitle && (
+            <p className="text-gray-500 mt-1 text-sm">{subtitle}</p>
+          )}
         </div>
       )}
       {children}
