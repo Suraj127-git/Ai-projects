@@ -12,6 +12,7 @@
     "dev": "lerna run dev --parallel",
     "test": "lerna run test",
     "clean": "lerna clean",
+    "clean:all": "bash ./clean_frontend.sh",
     "publish": "lerna publish"
   },
   "devDependencies": {
