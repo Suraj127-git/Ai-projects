@@ -68,33 +68,68 @@ services:
     restart: always
 
   # ======================
-  # Backend (FastAPI)
+  # Microservices run locally via Poetry/Makefile
+  # (Gateway and individual services are not containerized here yet.)
   # ======================
-  backend:
-    container_name: genai_backend
+  gateway:
+    container_name: genai_gateway
     build:
-      context: ../backend
+      context: ../backend/app/gateway
       dockerfile: Dockerfile
-    command: >
-      sh -c "pip install cryptography && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     ports:
       - "8000:8000"
-    volumes:
-      - ../backend:/app
     environment:
-      DATABASE_URL: mysql+pymysql://genai:genai@mysql:3306/genai_med
-      REDIS_URL: redis://redis:6379
-      QDRANT_URL: http://qdrant:6333
+      CHAT_SERVICE_URL: http://genai_chat_service:8003
     depends_on:
       mysql:
         condition: service_healthy
-      redis:
-        condition: service_started
       qdrant:
         condition: service_started
     networks:
       - genai_network
     restart: always
+
+  chat_service:
+    container_name: genai_chat_service
+    build:
+      context: ../backend/app/services/chat_service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      MYSQL_DSN: mysql+pymysql://genai:genai@genai_mysql:3306/genai_med
+      QDRANT_URL: http://genai_qdrant:6333
+    depends_on:
+      mysql:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    networks:
+      - genai_network
+    restart: always
+
+  # ======================
+  # Celery Worker (for long-running ingestion tasks)
+  # ======================
+  worker:
+    container_name: genai_worker
+    build:
+      context: ../backend/worker
+      dockerfile: Dockerfile
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      CHAT_SERVICE_URL: http://genai_chat_service:8003
+    depends_on:
+      redis:
+        condition: service_started
+      chat_service:
+        condition: service_started
+    networks:
+      - genai_network
+    restart: always
+    volumes:
+      - backend_data:/data
 
   # ======================
   # Celery Worker
