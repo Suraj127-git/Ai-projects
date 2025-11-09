@@ -131,32 +131,6 @@ services:
     volumes:
       - backend_data:/data
 
-  # ======================
-  # Celery Worker
-  # ======================
-  # celery:
-  #   container_name: genai_celery
-  #   build:
-  #     context: ../backend
-  #     dockerfile: Dockerfile
-  #   command: >
-  #     sh -c "pip install cryptography && celery -A app.celery_app.celery_app worker --loglevel=info"
-  #   volumes:
-  #     - ../backend:/app
-  #   environment:
-  #     DATABASE_URL: mysql+pymysql://genai:genai@mysql:3306/genai_med
-  #     REDIS_URL: redis://redis:6379
-  #     QDRANT_URL: http://qdrant:6333
-  #   depends_on:
-  #     backend:
-  #       condition: service_started
-  #     redis:
-  #       condition: service_started
-  #     mysql:
-  #       condition: service_healthy
-  #   networks:
-  #     - genai_network
-  #   restart: always
 
   # ======================
   # Frontend (React + Vite)
