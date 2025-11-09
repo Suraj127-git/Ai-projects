@@ -6,7 +6,8 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@genai-med-chat/shared': path.resolve(__dirname, '../shared/src')
+      '@genai-med-chat/shared': path.resolve(__dirname, '../shared/src'),
+      '@genai-med-chat/store': path.resolve(__dirname, '../store/src')
     }
   },
   build: {

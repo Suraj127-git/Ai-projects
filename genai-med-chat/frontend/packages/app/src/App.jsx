@@ -11,7 +11,7 @@ const App = () => (
 );
 
 const Main = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, login, register } = useAuth();
   const [isRegistering, setIsRegistering] = useState(false);
 
   const cardRef = useRef(null);
@@ -70,14 +70,14 @@ const Main = () => {
             {isRegistering ? (
               <RegisterForm
                 onRegister={async (userData) => {
-                  // handle register
+                  await register(userData);
                 }}
                 onSwitchToLogin={() => setIsRegistering(false)}
               />
             ) : (
               <LoginForm
                 onLogin={async (credentials) => {
-                  // handle login
+                  await login(credentials);
                 }}
                 onSwitchToRegister={() => setIsRegistering(true)}
               />

@@ -8,7 +8,8 @@ export default defineConfig({
     alias: {
       '@genai-med-chat/shared': path.resolve(__dirname, '../shared/src'),
       '@genai-med-chat/auth': path.resolve(__dirname, '../auth/src'),
-      '@genai-med-chat/chat': path.resolve(__dirname, '../chat/src')
+      '@genai-med-chat/chat': path.resolve(__dirname, '../chat/src'),
+      '@genai-med-chat/store': path.resolve(__dirname, '../store/src')
     }
   },
   server: {

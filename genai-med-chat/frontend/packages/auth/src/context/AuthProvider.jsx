@@ -1,48 +1,39 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { apiClient, setItem, getItem, removeItem } from '@genai-med-chat/shared';
+import React, { createContext, useContext, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchMe, loginUser, registerUser, logout } from '@genai-med-chat/store';
+import { getItem } from '@genai-med-chat/shared';
 
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
 const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
+  const loading = useSelector((state) => state.auth.loading);
 
   useEffect(() => {
-    const checkUser = async () => {
-      const token = getItem('token');
-      if (token) {
-        try {
-          const userData = await apiClient.get('/auth/me');
-          setUser(userData);
-        } catch (error) {
-          removeItem('token');
-        }
-      }
-      setLoading(false);
-    };
-
-    checkUser();
+    const token = getItem('token');
+    if (token) {
+      dispatch(fetchMe());
+    }
+    // When no token, loading remains false by default slice; keep UI consistent
   }, []);
 
   const login = async (credentials) => {
-    const { token, user } = await apiClient.post('/auth/login', credentials);
-    setItem('token', token);
-    setUser(user);
-    return user;
+    const res = await dispatch(loginUser(credentials));
+    if (res.error) throw new Error(res.error.message || 'Login failed');
+    return res.payload;
   };
 
   const register = async (userData) => {
-    const { token, user } = await apiClient.post('/auth/register', userData);
-    setItem('token', token);
-    setUser(user);
-    return user;
+    const res = await dispatch(registerUser(userData));
+    if (res.error) throw new Error(res.error.message || 'Register failed');
+    return res.payload;
   };
 
-  const logout = () => {
-    removeItem('token');
-    setUser(null);
+  const doLogout = () => {
+    dispatch(logout());
   };
 
   const value = {
@@ -50,7 +41,7 @@ const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
-    logout
+    logout: doLogout
   };
 
   return (

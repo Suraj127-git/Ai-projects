@@ -1,16 +1,21 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import gsap from "gsap";
+import { useDispatch, useSelector } from "react-redux";
+import { addMessage, sendChatQuery, fetchGraph } from "@genai-med-chat/store";
 
 export default function Chat() {
-  const [messages, setMessages] = useState([]);
+  const dispatch = useDispatch();
+  const messages = useSelector((state) => state.chat.messages);
+  const loading = useSelector((state) => state.chat.loading);
+  const lastConvId = useSelector((state) => state.chat.lastConvId);
+  const graph = useSelector((state) => state.chat.graph);
+  const user = useSelector((state) => state.auth.user);
+
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
   const [recording, setRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const [audioChunks, setAudioChunks] = useState([]);
-  const [lastConvId, setLastConvId] = useState(null);
-  const [graphJson, setGraphJson] = useState(null);
   const [showGraph, setShowGraph] = useState(false);
   const chatEndRef = useRef(null);
 
@@ -26,31 +31,16 @@ export default function Chat() {
   // 🧠 Handle send text message
   const handleSend = async (text = input) => {
     if (!text.trim()) return;
-    const userMessage = { sender: "user", text };
-    setMessages((prev) => [...prev, userMessage]);
+    // Push user message to store
+    dispatch(addMessage({ sender: "user", content: text }));
     setInput("");
-    setLoading(true);
 
-    try {
-      const response = await axios.post("/api/v1/chat/query", {
-        user_id: 1,
-        text,
-        conv_id: lastConvId,
-      });
-      const botMessage = {
-        sender: "bot",
-        text: response.data.answer || "No reply",
-      };
-      setMessages((prev) => [...prev, botMessage]);
-      if (response.data.conv_id) setLastConvId(response.data.conv_id);
-    } catch (error) {
-      console.error(error);
-      setMessages((prev) => [
-        ...prev,
-        { sender: "bot", text: "❌ Unable to fetch response" },
-      ]);
-    } finally {
-      setLoading(false);
+    const userId = user?.id || 1;
+    const res = await dispatch(
+      sendChatQuery({ user_id: userId, text, conv_id: lastConvId })
+    );
+    if (res.error) {
+      dispatch(addMessage({ sender: "bot", content: "❌ Unable to fetch response" }));
     }
   };
 
@@ -84,10 +74,7 @@ export default function Chat() {
           if (res.data.text) await handleSend(res.data.text);
         } catch (err) {
           console.error(err);
-          setMessages((prev) => [
-            ...prev,
-            { sender: "bot", text: "🎙 Voice processing failed." },
-          ]);
+          dispatch(addMessage({ sender: "bot", content: "🎙 Voice processing failed." }));
         }
       };
 
@@ -119,14 +106,8 @@ export default function Chat() {
   // 🧩 Fetch reasoning graph
   const handleShowGraph = async () => {
     if (!lastConvId) return alert("No conversation yet!");
-    try {
-      const res = await axios.get(`/api/v1/graph/${lastConvId}`);
-      setGraphJson(res.data);
-      setShowGraph(true);
-    } catch (err) {
-      console.error(err);
-      alert("Graph fetch failed");
-    }
+    const res = await dispatch(fetchGraph(lastConvId));
+    if (!res.error) setShowGraph(true);
   };
 
   return (
@@ -155,7 +136,7 @@ export default function Chat() {
                   : "bg-gray-100 text-gray-800 rounded-bl-none"
               }`}
             >
-              {msg.text}
+              {msg.content}
             </div>
           </div>
         ))}
@@ -235,7 +216,7 @@ export default function Chat() {
               🧠 Reasoning Graph (Conv: {lastConvId})
             </h3>
             <pre className="text-xs bg-gray-50 border border-gray-200 rounded-lg p-3 overflow-auto">
-              {JSON.stringify(graphJson, null, 2)}
+              {JSON.stringify(graph, null, 2)}
             </pre>
           </div>
         </div>
