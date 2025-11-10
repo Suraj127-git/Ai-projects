@@ -1,4 +1,4 @@
-name: Frontend Jest Tests
+name: CI PIPELINE
 
 on:
   push:
